@@ -10,8 +10,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Drivetrain {
-    private DcMotor leftDrive;
-    private DcMotor rightDrive;
+    private DcMotor frontLeftDrive;
+    private DcMotor backLeftDrive;
+    private DcMotor frontRightDrive;
+    private DcMotor backRightDrive;
 
     public final double WHEEL_DIAMETER_MM = 96;
     public final double ENCODER_TICKS_PER_REV = 537.7;
@@ -21,53 +23,75 @@ public class Drivetrain {
     private ElapsedTime driveTimer = new ElapsedTime();
 
     public Drivetrain(HardwareMap hardwareMap) {
-        leftDrive = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+        frontLeftDrive = hardwareMap.get(DcMotor.class, "front_left_drive");
+        backLeftDrive = hardwareMap.get(DcMotor.class, "back_left_drive");
+        frontRightDrive = hardwareMap.get(DcMotor.class, "front_right_drive");
+        backRightDrive = hardwareMap.get(DcMotor.class, "back_right_drive");
 
-        leftDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+        backLeftDrive.setDirection(DcMotor.Direction.REVERSE);
+        frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
+        backRightDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        leftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeftDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRightDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        leftDrive.setZeroPowerBehavior(BRAKE);
-        rightDrive.setZeroPowerBehavior(BRAKE);
+        frontLeftDrive.setZeroPowerBehavior(BRAKE);
+        backLeftDrive.setZeroPowerBehavior(BRAKE);
+        frontRightDrive.setZeroPowerBehavior(BRAKE);
+        backRightDrive.setZeroPowerBehavior(BRAKE);
     }
 
-    public void setPower(double leftPower, double rightPower) {
-        leftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftDrive.setPower(leftPower);
-        rightDrive.setPower(rightPower);
-    }
+    public void mecanumDrive(double axial, double lateral, double yaw) {
+        frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-    public void arcadeDrive(double drive, double turn) {
-        double leftPower = drive + turn;
-        double rightPower = drive - turn;
+        double frontLeftPower  = axial + lateral + yaw;
+        double frontRightPower = axial - lateral - yaw;
+        double backLeftPower   = axial - lateral + yaw;
+        double backRightPower  = axial + lateral - yaw;
 
-        double max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
+        double max = Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower));
+        max = Math.max(max, Math.abs(backLeftPower));
+        max = Math.max(max, Math.abs(backRightPower));
+
         if (max > 1.0) {
-            leftPower /= max;
-            rightPower /= max;
+            frontLeftPower  /= max;
+            frontRightPower /= max;
+            backLeftPower   /= max;
+            backRightPower  /= max;
         }
 
-        setPower(leftPower, rightPower);
+        frontLeftDrive.setPower(frontLeftPower);
+        frontRightDrive.setPower(frontRightPower);
+        backLeftDrive.setPower(backLeftPower);
+        backRightDrive.setPower(backRightPower);
     }
 
     public boolean driveDistance(double speed, double distance, DistanceUnit distanceUnit, double holdSeconds) {
         final double TOLERANCE_MM = 10;
         double targetPosition = (distanceUnit.toMm(distance) * TICKS_PER_MM);
 
-        leftDrive.setTargetPosition((int) targetPosition);
-        rightDrive.setTargetPosition((int) targetPosition);
+        frontLeftDrive.setTargetPosition((int) targetPosition);
+        backLeftDrive.setTargetPosition((int) targetPosition);
+        frontRightDrive.setTargetPosition((int) targetPosition);
+        backRightDrive.setTargetPosition((int) targetPosition);
 
-        leftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        leftDrive.setPower(speed);
-        rightDrive.setPower(speed);
+        frontLeftDrive.setPower(speed);
+        backLeftDrive.setPower(speed);
+        frontRightDrive.setPower(speed);
+        backRightDrive.setPower(speed);
 
-        if (Math.abs(targetPosition - leftDrive.getCurrentPosition()) > (TOLERANCE_MM * TICKS_PER_MM)) {
+        if (Math.abs(targetPosition - frontLeftDrive.getCurrentPosition()) > (TOLERANCE_MM * TICKS_PER_MM)) {
             driveTimer.reset();
         }
 
@@ -81,16 +105,22 @@ public class Drivetrain {
         double leftTargetPosition = -(targetMm * TICKS_PER_MM);
         double rightTargetPosition = targetMm * TICKS_PER_MM;
 
-        leftDrive.setTargetPosition((int) leftTargetPosition);
-        rightDrive.setTargetPosition((int) rightTargetPosition);
+        frontLeftDrive.setTargetPosition((int) leftTargetPosition);
+        backLeftDrive.setTargetPosition((int) leftTargetPosition);
+        frontRightDrive.setTargetPosition((int) rightTargetPosition);
+        backRightDrive.setTargetPosition((int) rightTargetPosition);
 
-        leftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backLeftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        frontRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        backRightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        leftDrive.setPower(speed);
-        rightDrive.setPower(speed);
+        frontLeftDrive.setPower(speed);
+        backLeftDrive.setPower(speed);
+        frontRightDrive.setPower(speed);
+        backRightDrive.setPower(speed);
 
-        if ((Math.abs(leftTargetPosition - leftDrive.getCurrentPosition())) > (TOLERANCE_MM * TICKS_PER_MM)) {
+        if ((Math.abs(leftTargetPosition - frontLeftDrive.getCurrentPosition())) > (TOLERANCE_MM * TICKS_PER_MM)) {
             driveTimer.reset();
         }
 
@@ -98,18 +128,10 @@ public class Drivetrain {
     }
 
     public int getLeftPosition() {
-        return leftDrive.getCurrentPosition();
+        return frontLeftDrive.getCurrentPosition();
     }
 
     public int getRightPosition() {
-        return rightDrive.getCurrentPosition();
-    }
-
-    public int getLeftTarget() {
-        return leftDrive.getTargetPosition();
-    }
-
-    public int getRightTarget() {
-        return rightDrive.getTargetPosition();
+        return frontRightDrive.getCurrentPosition();
     }
 }

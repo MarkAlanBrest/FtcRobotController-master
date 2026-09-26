@@ -44,7 +44,7 @@ public class BioBuzzStarterbotTeleop extends OpMode {
         launcherSubsystem = new LauncherSubsystem(hardwareMap);
         intakeSubsystem = new IntakeSubsystem(hardwareMap);
 
-        telemetry.addData("Status", "Initialized (Subsystems)");
+        telemetry.addData("Status", "Initialized (Mecanum Subsystems)");
     }
 
     @Override
@@ -57,7 +57,12 @@ public class BioBuzzStarterbotTeleop extends OpMode {
 
     @Override
     public void loop() {
-        drivetrain.arcadeDrive(-gamepad1.left_stick_y, gamepad1.right_stick_x);
+        // Mecanum drive: left stick vertical = axial (forward/backward), left stick horizontal = lateral (strafe), right stick horizontal = yaw (turn)
+        double axial   = -gamepad1.left_stick_y;
+        double lateral =  gamepad1.left_stick_x;
+        double yaw     =  gamepad1.right_stick_x;
+
+        drivetrain.mecanumDrive(axial, lateral, yaw);
 
         intakePower = gamepad1.right_trigger - gamepad1.left_trigger;
 
